@@ -12,6 +12,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.Node;
 import java.util.UUID; // Make sure you have this import at the top
 //import java.time.Instant;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +24,8 @@ import java.time.format.DateTimeFormatter;
 //import java.util.UUID; // Import for generating unique message IDs
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 
 
@@ -52,6 +57,9 @@ public class ChatController {
     private final String currentUserId = "Aditya-Chauhan";
 
     private final Map<String, ChatMessage> messageHistory = new ConcurrentHashMap<>();
+
+    /** Track deleted messages to show "This message was deleted" */
+    private final Set<String> deletedMessages = new HashSet<>();
 
     /** The message ID currently selected for reply. Null if not replying. */
     private String currentReplyId=null;
@@ -121,8 +129,62 @@ public class ChatController {
         replyQuoteBox.setManaged(false);
     }
 
+    /**
+     * Handles the deletion of a message.
+     * @param messageId the ID of the message to delete
+     * @param messageBubble the UI element representing the message
+     */
+    private void deleteMessage(final String messageId, final VBox messageBubble) {
+        // Mark the message as deleted
+        deletedMessages.add(messageId);
 
+        // Call the ChatManager's delete method (for future network sync)
+        chatManager.deleteMessage(messageId);
 
+        // Update the UI to show "This message was deleted"
+        Platform.runLater(() -> {
+            // Clear existing content
+            messageBubble.getChildren().clear();
+
+            // Create deleted message label
+            final Label deletedLabel = new Label("This message was deleted");
+            deletedLabel.getStyleClass().addAll("message-content-label", "deleted-message-label");
+            deletedLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #888888;");
+
+            messageBubble.getChildren().add(deletedLabel);
+            messageBubble.getStyleClass().removeAll("sent-bubble", "received-bubble");
+            messageBubble.getStyleClass().add("deleted-bubble");
+        });
+    }
+
+    /**
+     * Creates a context menu with Reply and Delete options for a message.
+     * @param messageId the ID of the message
+     * @param messageContent the content of the message
+     * @param isSentByMe whether the message was sent by the current user
+     * @param messageBubble the UI element representing the message
+     * @return the configured ContextMenu
+     */
+    private ContextMenu createMessageContextMenu(final String messageId,
+                                                 final String messageContent,
+                                                 final boolean isSentByMe,
+                                                 final VBox messageBubble) {
+        final ContextMenu contextMenu = new ContextMenu();
+
+        // Reply option (available for all messages)
+        final MenuItem replyItem = new MenuItem("Reply");
+        replyItem.setOnAction(e -> startReply(messageId, messageContent));
+        contextMenu.getItems().add(replyItem);
+
+        // Delete option (only for messages sent by the current user)
+        if (isSentByMe && !deletedMessages.contains(messageId)) {
+            final MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(e -> deleteMessage(messageId, messageBubble));
+            contextMenu.getItems().add(deleteItem);
+        }
+
+        return contextMenu;
+    }
 
     /**
      * This method is triggered by the "Test Recv" button.
@@ -190,14 +252,19 @@ public class ChatController {
         if (replyToId != null) {
             final ChatMessage repliedTo = messageHistory.get(replyToId);
             if (repliedTo != null) {
-                // Display the original sender's username and a snippet of the original content
-                final String originalSender = repliedTo.getUserId().equals(this.currentUserId)
-                        ? "You" : repliedTo.getUserId();
-                final String originalContent = repliedTo.getContent();
+                // Check if the replied-to message was deleted
+                if (deletedMessages.contains(replyToId)) {
+                    quotedContent = "REPLY to deleted message";
+                } else {
+                    // Display the original sender's username and a snippet of the original content
+                    final String originalSender = repliedTo.getUserId().equals(this.currentUserId)
+                            ? "You" : repliedTo.getUserId();
+                    final String originalContent = repliedTo.getContent();
 
-                quotedContent = String.format("REPLY to %s: %s",
-                        originalSender,
-                        originalContent.substring(0, Math.min(originalContent.length(), 20)) + (originalContent.length() > 20 ? "..." : ""));
+                    quotedContent = String.format("REPLY to %s: %s",
+                            originalSender,
+                            originalContent.substring(0, Math.min(originalContent.length(), 20)) + (originalContent.length() > 20 ? "..." : ""));
+                }
             } else {
                 // Message was a reply, but we don't have the original (e.g., from an old session)
                 quotedContent = "REPLY: Message not found";
@@ -224,7 +291,7 @@ public class ChatController {
                                 final boolean isSent,
                                 final String messageId,
                                 final String quotedContent
-                                ) {
+    ) {
         Platform.runLater(() -> {
             final VBox messageBubble = new VBox();
             messageBubble.getStyleClass().add("message-bubble");
@@ -239,14 +306,25 @@ public class ChatController {
             final Label contentLabel = new Label(message);
             final Label timestampLabel = new Label(timestamp);
 
-            final Button replyButton = new Button("Reply");
-            replyButton.getStyleClass().add("reply-button");
-            replyButton.setOnAction(e -> startReply(messageId, message));
+            // Create the three dots button for message options
+            final Button optionsButton = new Button("⋮");
+            optionsButton.getStyleClass().add("options-button");
+            optionsButton.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-font-size: 16px; -fx-font-weight: bold;");
 
-            // Use an HBox for the timestamp and reply button
+            // Create context menu for options
+            final ContextMenu contextMenu = createMessageContextMenu(messageId, message, isSent, messageBubble);
+
+            // Show context menu on button click
+            optionsButton.setOnAction(e -> {
+                contextMenu.show(optionsButton,
+                        optionsButton.getScene().getWindow().getX() + optionsButton.getLayoutBounds().getMinX(),
+                        optionsButton.getScene().getWindow().getY() + optionsButton.getLayoutBounds().getMaxY());
+            });
+
+            // Use an HBox for the timestamp and options button
             final HBox bottomRow = new HBox(5); // 5 is spacing
             bottomRow.setAlignment(Pos.CENTER_RIGHT);
-            bottomRow.getChildren().addAll(timestampLabel, replyButton);
+            bottomRow.getChildren().addAll(timestampLabel, optionsButton);
 
             usernameLabel.getStyleClass().add("username-label");
             contentLabel.getStyleClass().add("message-content-label");
