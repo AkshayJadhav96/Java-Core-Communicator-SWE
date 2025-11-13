@@ -8,14 +8,14 @@ import com.swe.RPC.AbstractRPC;
 import com.swe.RPC.SocketryServerRPC;
 import com.swe.chat.ChatManager;
 import com.swe.networking.ClientNode;
-import com.swe.networking.SimpleNetworking.SimpleNetworking;
+import com.swe.networking.Networking;
 
 public class CoreApp {
     public static void main(String[] args) {
         try {
             // 1. Create the wrappers (but don't start them yet)
             AbstractRPC rpcServer = new SocketryServerRPC(7000);
-            SimpleNetworking network = SimpleNetworking.getSimpleNetwork();
+            Networking network = Networking.getNetwork();
 
             // 2. Configure Networking
             // (In reality, Controller determines these IPs)

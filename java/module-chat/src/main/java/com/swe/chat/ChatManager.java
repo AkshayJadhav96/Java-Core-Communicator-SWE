@@ -3,6 +3,7 @@ package com.swe.chat;
 import com.swe.RPC.AbstractRPC;
 import com.swe.networking.ClientNode;
 import com.swe.networking.ModuleType;
+import com.swe.networking.Networking;
 import com.swe.networking.SimpleNetworking.SimpleNetworking;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class ChatManager implements IChatService {
     private static final byte FLAG_FILE_METADATA = (byte) 0x03;
 
     private final AbstractRPC rpc;
-    private final SimpleNetworking network;
+    private final Networking network;
 
     /**
      * FILE CACHE - Stores compressed files temporarily
@@ -44,7 +45,7 @@ public class ChatManager implements IChatService {
      */
     private final Map<String, byte[]> fileCache = new ConcurrentHashMap<>();
 
-    public ChatManager(SimpleNetworking network, AbstractRPC rpc) {
+    public ChatManager(Networking network, AbstractRPC rpc) {
         this.rpc = rpc;
         this.network = network;
 
@@ -57,7 +58,7 @@ public class ChatManager implements IChatService {
         this.rpc.subscribe("chat:save-file-to-disk", this::handleSaveFileToDisk);
 
         // Subscribe to network messages
-        this.network.subscribe(ModuleType.CHAT, this::handleNetworkMessage);
+        this.network.subscribe(ModuleType.CHAT.ordinal(), this::handleNetworkMessage);
     }
 
     /**
@@ -71,7 +72,7 @@ public class ChatManager implements IChatService {
         try {
             byte[] networkPacket = addProtocolFlag(messageBytes, FLAG_TEXT_MESSAGE);
             ClientNode[] dests = { new ClientNode("127.0.0.1", 1234) };
-            this.network.sendData(networkPacket, dests, ModuleType.CHAT, 0);
+            this.network.sendData(networkPacket, dests, ModuleType.CHAT.ordinal(), 0);
 
             return new byte[0];  // Empty array with brackets
         } catch (Exception e) {
@@ -165,7 +166,7 @@ public class ChatManager implements IChatService {
             byte[] networkPacket = addProtocolFlag(contentModeBytes, FLAG_FILE_MESSAGE);
 
             ClientNode[] dests = { new ClientNode("127.0.0.1", 1234) };
-            this.network.sendData(networkPacket, dests, ModuleType.CHAT, 0);
+            this.network.sendData(networkPacket, dests, ModuleType.CHAT.ordinal(), 0);
 
             System.out.println("[Core] Sent file to network");
 
