@@ -13,7 +13,7 @@ class CoalescedPacket {
     /**
      * Variable to store the name of the module.
      */
-    private static final String MODULENAME = "[COALESCEDPACKET]";
+//    private static final String MODULENAME = "[COALESCEDPACKET]";
 
     /**
      * Queue storing packets to be coalesced.

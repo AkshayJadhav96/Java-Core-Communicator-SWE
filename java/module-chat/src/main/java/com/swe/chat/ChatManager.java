@@ -71,7 +71,7 @@ public class ChatManager implements IChatService {
 
         try {
             byte[] networkPacket = addProtocolFlag(messageBytes, FLAG_TEXT_MESSAGE);
-            ClientNode[] dests = { new ClientNode("127.0.0.1", 1234) };
+            ClientNode[] dests = { new ClientNode("10.32.0.22", 5678) };
             this.network.sendData(networkPacket, dests, ModuleType.CHAT.ordinal(), 0);
 
             return new byte[0];  // Empty array with brackets
@@ -165,7 +165,7 @@ public class ChatManager implements IChatService {
             byte[] contentModeBytes = FileMessageSerializer.serialize(contentModeMsg);
             byte[] networkPacket = addProtocolFlag(contentModeBytes, FLAG_FILE_MESSAGE);
 
-            ClientNode[] dests = { new ClientNode("127.0.0.1", 1234) };
+            ClientNode[] dests = { new ClientNode("10.32.0.22", 5678) };
             this.network.sendData(networkPacket, dests, ModuleType.CHAT.ordinal(), 0);
 
             System.out.println("[Core] Sent file to network");
