@@ -30,6 +30,7 @@ public final class TCPCommunicator implements ProtocolBase {
      * The selector for the sockets.
      */
     private Selector selector;
+
     /**
      * The list of all connected clients and their sockets.
      *
@@ -64,6 +65,14 @@ public final class TCPCommunicator implements ProtocolBase {
             NetworkLogger.printError(MODULENAME, "Unable to initialize TCP comunicator...");
             NetworkLogger.printError(MODULENAME, "Error : " + ex.getMessage());
         }
+    }
+
+    /**
+     * Function to print all keys in the selector.
+     */
+    @Override
+    public void printKeys() {
+        selector.keys().stream().forEach(kay -> System.out.println(kay.channel()));
     }
 
     @Override
@@ -112,7 +121,7 @@ public final class TCPCommunicator implements ProtocolBase {
     public SocketChannel openSocket() {
         try {
             final SocketChannel socket = SocketChannel.open();
-            NetworkLogger.printInfo(MODULENAME, "Opening new socket at port " + socket.socket().getPort() + "...");
+            NetworkLogger.printInfo(MODULENAME, "Opening new socket at port " + socket.socket().getLocalPort() + "...");
             return socket;
         } catch (IOException ex) {
             NetworkLogger.printError(MODULENAME, "Error occurred while opening socket...");
@@ -144,7 +153,6 @@ public final class TCPCommunicator implements ProtocolBase {
     public void sendData(final byte[] data, final ClientNode dest) {
         final String destIp = dest.hostName();
         final Integer destPort = dest.port();
-        System.out.println("sending to "+destIp + destPort);
         try {
             final SocketChannel destSocket;
             if (clientSockets.containsKey(dest)) {

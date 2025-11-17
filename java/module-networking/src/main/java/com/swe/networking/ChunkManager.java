@@ -54,7 +54,7 @@ public class ChunkManager {
     /**
      * chunkListMap maps message id to list of chunks.
      */
-    private final Map<Integer, Vector<byte[]>> chunkListMap = new HashMap<>();
+    private final Map<String, Vector<byte[]>> chunkListMap = new HashMap<>();
     /**
      * messageList gets the list of merged chunks.
      */
@@ -79,7 +79,7 @@ public class ChunkManager {
      */
     public byte[] addChunk(final byte[] chunk) throws UnknownHostException {
         final PacketInfo info = parser.parsePacket(chunk);
-        final int msgId = info.getMessageId();
+        final String msgId = String.valueOf(info.getMessageId()) + ":" + info.getIpAddress().toString();
         final int maxNumChunks = info.getChunkLength();
         final int chunkId = info.getChunkNum();
         System.out.println("Chunk id / total chunks " + chunkId + " / " + maxNumChunks);
@@ -92,7 +92,6 @@ public class ChunkManager {
         if (chunkListMap.get(msgId).size() == maxNumChunks) {
             final byte[] messageChunk = mergeChunks(chunkListMap.get(msgId));
             // TOD use appropriate function once the message is ready
-            System.out.println("message length: " + messageChunk.length);
             messageList.add(messageChunk);
             chunkListMap.remove(msgId);
             return messageChunk;

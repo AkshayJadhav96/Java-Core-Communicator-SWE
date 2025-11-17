@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Vector;
 
-import com.swe.core.RPCinterface.AbstractRPC;
+import com.swe.core.RPCinteface.AbstractRPC;
 import com.swe.networking.ClientNode;
 import com.swe.networking.ModuleType;
 import com.swe.networking.NetworkConnectionType;
@@ -185,7 +185,7 @@ public final class SimpleNetworking
                 SimpleNetworkLogger.printError(MODULENAME, "Error on receiving data...");
             }
         }
-        SimpleNetworkLogger.printInfo(MODULENAME, "Thread exited from receiving data...");
+        SimpleNetworkLogger.printWarning(MODULENAME, "Thread exited from receiving data...");
     }
 
     /**
@@ -201,7 +201,7 @@ public final class SimpleNetworking
             SimpleNetworkLogger.printInfo(MODULENAME, "Added new subscriber : " + name.toString() + " ...");
             return;
         }
-        SimpleNetworkLogger.printInfo(MODULENAME, "The name " + name.toString() + " already exists...");
+        SimpleNetworkLogger.printError(MODULENAME, "The name " + name.toString() + " already exists...");
     }
 
     /**
